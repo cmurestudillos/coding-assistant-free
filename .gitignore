@@ -1,0 +1,9 @@
+node_modules
+package-lock.json
+bun.lock
+yarn.lock
+dist
+coverage
+release
+.idea
+.DS_Store

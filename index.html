@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coding Assistant - Gratuito</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>Conversaciones</h2>
+          <button id="newChatBtn" class="btn-icon" title="Nueva conversación">+</button>
+        </div>
+
+        <!-- Buscador -->
+        <div class="sidebar-search">
+          <input type="text" id="conversationSearch" placeholder="Buscar conversaciones..." class="search-input" />
+        </div>
+
+        <div class="conversations-list" id="conversationsList">
+          <div class="empty-state">
+            <p>Sin conversaciones</p>
+            <small>Inicia una nueva conversación</small>
+          </div>
+        </div>
+
+        <!-- Botón cargar más -->
+        <div class="load-more-container" id="loadMoreContainer" style="display: none">
+          <button id="loadMoreBtn" class="btn-load-more">Cargar más ...</button>
+          <small class="load-more-info" id="loadMoreInfo"></small>
+        </div>
+      </aside>
+
+      <!-- Panel de opciones -->
+      <div id="optionsPanel" class="options-panel">
+        <div class="panel-header">
+          <h3>Opciones Avanzadas</h3>
+          <button id="closePanelBtn" class="close-btn">×</button>
+        </div>
+
+        <div class="panel-section">
+          <label>Tipo de optimización:</label>
+          <select id="optimizeFocus">
+            <option value="general">General</option>
+            <option value="performance">Rendimiento</option>
+            <option value="readability">Legibilidad</option>
+            <option value="security">Seguridad</option>
+            <option value="memory">Memoria</option>
+          </select>
+        </div>
+
+        <div class="panel-section">
+          <label>Nivel de explicación:</label>
+          <select id="explainLevel">
+            <option value="intermediate">Intermedio</option>
+            <option value="beginner">Principiante</option>
+            <option value="expert">Experto</option>
+          </select>
+        </div>
+
+        <div class="panel-section">
+          <label>Estilo de refactorización:</label>
+          <select id="refactorStyle">
+            <option value="modern">Moderno (ES6+)</option>
+            <option value="functional">Funcional</option>
+            <option value="oop">Orientado a Objetos</option>
+            <option value="clean">Clean Code</option>
+          </select>
+        </div>
+
+        <div class="panel-section">
+          <label>Framework de tests:</label>
+          <select id="testFramework">
+            <option value="jest">Jest</option>
+            <option value="vitest">Vitest</option>
+            <option value="mocha">Mocha</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+          <div class="header-content">
+            <h1>🤖 Snippet Bot</h1>
+          </div>
+          <div class="header-stats">
+            <span class="stat" id="cacheStatus">Caché: Cargando...</span>
+            <span class="stat">Sin costes</span>
+          </div>
+          <div class="header-actions">
+            <button id="settingsBtn" class="btn-icon-conf" title="Configuración">⚙️</button>
+          </div>
+        </header>
+
+        <!-- Chat Container -->
+        <div class="chat-container" id="chatContainer">
+          <div class="welcome-message">
+            <div class="welcome-icon">💻</div>
+            <h2>¡Bienvenido al Asistente Gratuito!</h2>
+            <p>Busca directamente en la documentación oficial de:</p>
+            <div class="tech-badges">
+              <span class="badge">JavaScript</span>
+              <span class="badge">TypeScript</span>
+              <span class="badge">React</span>
+              <span class="badge">Vue</span>
+              <span class="badge">Angular</span>
+              <span class="badge">Node.js</span>
+              <span class="badge">Express</span>
+              <span class="badge">MongoDB</span>
+            </div>
+            <div class="example-questions">
+              <p><strong>Ejemplos de preguntas:</strong></p>
+              <ul>
+                <li class="example-q">¿Cómo funciona useState en React?</li>
+                <li class="example-q">Explícame async/await en JavaScript</li>
+                <li class="example-q">¿Qué es el composition API en Vue?</li>
+                <li class="example-q">¿Cómo crear middleware en Express?</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-container">
+          <div class="quick-actions">
+            <button class="quick-btn" data-action="optimize">Optimizar</button>
+            <button class="quick-btn" data-action="explain">Explicar</button>
+            <button class="quick-btn" data-action="fix">Corregir errores</button>
+            <button class="quick-btn" data-action="test">Generar tests</button>
+          </div>
+
+          <div class="input-wrapper">
+            <textarea id="messageInput" placeholder="Pregunta sobre programación..." rows="2"></textarea>
+            <button id="sendBtn" class="btn btn-primary">
+              <span id="sendBtnText">Buscar</span>
+              <span id="sendBtnLoader" class="loader" style="display: none"></span>
+            </button>
+          </div>
+          <div class="input-info">
+            <span class="status-text">Busca en documentación oficial - 100% gratis</span>
+          </div>
+        </div>
+
+        <!-- Modal de Configuración -->
+        <div id="settingsModal" class="modal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Configuración de IA</h2>
+              <button class="close-btn" id="closeSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="ollama-status" id="ollamaStatus">
+                <div class="status-indicator">
+                  <span class="status-dot" id="statusDot"></span>
+                  <span id="statusText">Verificando Ollama...</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Modelo de IA</label>
+                <select id="modelSelect" class="input-field">
+                  <option value="">Cargando modelos...</option>
+                </select>
+                <small class="help-text"> Si el modelo no está descargado, se descargará automáticamente. </small>
+              </div>
+
+              <div class="installation-guide" id="installationGuide" style="display: none">
+                <h3>Instalar Ollama</h3>
+                <ol>
+                  <li>Descarga Ollama desde: <a href="https://ollama.ai" target="_blank">ollama.ai</a></li>
+                  <li>Instala Ollama en tu sistema</li>
+                  <li>Abre terminal y ejecuta: <code>ollama serve</code></li>
+                  <li>Descarga un modelo: <code>ollama pull codellama:7b</code></li>
+                  <li>Reinicia esta aplicación</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

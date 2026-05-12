@@ -1,0 +1,58 @@
+{
+  "name": "snippet-bot-assistant",
+  "version": "1.0.0",
+  "description": "Asistente de programación gratuito con documentación oficial",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "lint": "eslint main.js preload.js renderer.js src/",
+    "lint:fix": "eslint main.js preload.js renderer.js src/ --fix",
+    "package:mac": "electron-builder build --mac",
+    "package:win": "electron-builder build --windows",
+    "package:linux": "electron-builder build --linux"
+  },
+  "keywords": [
+    "electron",
+    "coding",
+    "assistant",
+    "free",
+    "documentation"
+  ],
+  "author": "Carlos",
+  "license": "MIT",
+  "packageManager": "pnpm@11.1.0",
+  "devDependencies": {
+    "electron": "^38.1.2",
+    "electron-builder": "^26.0.12",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.7.4"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
+    "node-html-parser": "^7.0.2",
+    "ollama": "^0.6.3",
+    "sqlite3": "^5.1.7",
+    "turndown": "^7.2.2"
+  },
+  "build": {
+    "appId": "com.cmurdev.snippet-bot-assistant",
+    "productName": "Coding Assistant Free",
+    "directories": {
+      "output": "release/"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "src/assets/icon.icns"
+    },
+    "win": {
+      "icon": "src/assets/icon.ico"
+    },
+    "linux": {
+      "icon": "src/assets/icon.png",
+      "category": "Development"
+    }
+  }
+}
