@@ -2,3 +2,4 @@ allowBuilds:
   electron: true
   electron-winstaller: true
   sqlite3: true
+nodeLinker: hoisted
