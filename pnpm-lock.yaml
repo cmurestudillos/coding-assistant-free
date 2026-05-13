@@ -11,12 +11,24 @@ importers:
       axios:
         specifier: ^1.13.2
         version: 1.16.0
+      boolbase:
+        specifier: ^1.0.0
+        version: 1.0.0
       cheerio:
         specifier: ^1.1.2
         version: 1.2.0
+      css-select:
+        specifier: ^5.1.0
+        version: 5.2.2
+      css-what:
+        specifier: ^6.2.0
+        version: 6.2.2
       node-html-parser:
         specifier: ^7.0.2
         version: 7.1.0
+      nth-check:
+        specifier: ^2.1.1
+        version: 2.1.1
       ollama:
         specifier: ^0.6.3
         version: 0.6.3
