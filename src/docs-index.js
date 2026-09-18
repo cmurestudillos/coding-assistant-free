@@ -17,6 +17,7 @@ const SEARCH_CANDIDATES = 40;
 const DOWNLOAD_IDLE_TIMEOUT = 20000; // Sin recibir datos durante este tiempo → reintentar
 const DOWNLOAD_ATTEMPTS = 3;
 const EMBED_BATCH = 32; // Fragmentos por llamada a Ollama (~7 ms por fragmento con GPU)
+const EMBED_RETRY_DELAYS = [1000, 5000, 15000]; // Esperas entre reintentos de un lote de embeddings
 // Constante de Reciprocal Rank Fusion. El valor clásico (60) puntúa tan plano que un fragmento
 // mediocre en las dos listas gana al mejor de una sola; con 10 cuentan más las primeras posiciones.
 // Elegido evaluando 24 consultas (nombres de API y descripciones) sobre la documentación de JavaScript
@@ -296,7 +297,7 @@ class DocsIndex {
     try {
       for (let start = 0; start < chunks.length; start += EMBED_BATCH) {
         const batch = chunks.slice(start, start + EMBED_BATCH);
-        const vectors = await this.embedder.embed(
+        const vectors = await this.embedBatchWithRetry(
           batch.map(chunk => `search_document: ${chunk.heading}\n\n${chunk.content}`)
         );
 
@@ -321,6 +322,24 @@ class DocsIndex {
     }
 
     await this.run('UPDATE docs_packs SET embed_model = ? WHERE tech = ?', [this.embedder.embedModel, key]);
+  }
+
+  // En Windows, Ollama tokeniza cada texto con una petición HTTP interna y, tras miles
+  // seguidas, a veces se quedan sin puertos locales ("bind: ... lacked sufficient buffer
+  // space") y responde 400. Es transitorio: esperar y reintentar el mismo lote funciona
+  async embedBatchWithRetry(texts) {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await this.embedder.embed(texts);
+      } catch (error) {
+        if (attempt > EMBED_RETRY_DELAYS.length) {
+          throw error;
+        }
+        const detail = (error.response && error.response.data && error.response.data.error) || error.message;
+        console.warn(`Embeddings fallidos (${detail}), reintento ${attempt}/${EMBED_RETRY_DELAYS.length}`);
+        await new Promise(resolve => setTimeout(resolve, EMBED_RETRY_DELAYS[attempt - 1]));
+      }
+    }
   }
 
   async deleteTechVectors(tech) {

@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Coding Assistant Free — Asistente de programación local y gratuito</title>
+    <meta
+      name="description"
+      content="Asistente de programación de escritorio que responde con la documentación oficial de JavaScript, React, Node.js y más. IA local con Ollama: gratis, sin APIs de pago. Windows, macOS y Linux." />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="assets/icons/icon.png" />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Coding Assistant Free — Asistente de programación local y gratuito" />
+    <meta
+      property="og:description"
+      content="Respuestas basadas en la documentación oficial, con fuentes. IA local con Ollama, documentación offline y búsqueda semántica." />
+    <meta property="og:image" content="assets/screenshots/02-respuesta.png" />
+    <meta property="og:url" content="https://cmurestudillos.github.io/coding-assistant-free/" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#/">
+          <img src="assets/icons/icon.png" alt="" width="32" height="32" />
+          <span>Coding Assistant Free</span>
+        </a>
+
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="siteNav" aria-label="Abrir menú">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="site-nav" id="siteNav" aria-label="Navegación principal">
+          <a href="#/" data-route-link="/">Inicio</a>
+          <a href="#/caracteristicas" data-route-link="/caracteristicas">Características</a>
+          <a href="#/capturas" data-route-link="/capturas">Capturas</a>
+          <a href="#/descargas" data-route-link="/descargas">Descargas</a>
+          <a href="#/documentacion" data-route-link="/documentacion">Documentación</a>
+          <a class="nav-cta" href="https://github.com/cmurestudillos/coding-assistant-free" rel="noopener">GitHub</a>
+          <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <span aria-hidden="true">🌗</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ══════════════════ INICIO ══════════════════ -->
+      <section class="view" data-route="/">
+        <div class="hero">
+          <div class="container hero-inner">
+            <div class="hero-copy">
+              <p class="eyebrow">
+                <span class="dot"></span> Código abierto · MIT · IA 100% local<span id="heroVersion"></span>
+              </p>
+              <h1>Tu asistente de programación, <span class="gradient-text">con la documentación oficial</span></h1>
+              <p class="lead">
+                Pregunta en español y recibe respuestas basadas en la documentación oficial de JavaScript, React,
+                Node.js y más, con las fuentes citadas. La IA corre en tu equipo con Ollama: sin APIs de pago ni
+                suscripciones.
+              </p>
+              <div class="hero-actions">
+                <a class="btn btn-primary btn-lg" id="heroDownload" href="#/descargas"> ⬇ Descargar gratis </a>
+                <a class="btn btn-ghost btn-lg" href="#/capturas">Ver capturas</a>
+              </div>
+              <p class="hero-meta">Windows · macOS · Linux — necesita Ollama (gratuito)</p>
+            </div>
+
+            <figure class="hero-shot">
+              <img
+                src="assets/screenshots/02-respuesta.png"
+                alt="Coding Assistant Free respondiendo cómo esperar a varias promesas con Promise.all, con fuentes de MDN"
+                width="1280"
+                height="800"
+                loading="eager" />
+            </figure>
+          </div>
+        </div>
+
+        <div class="container">
+          <ul class="stat-row">
+            <li><strong>10</strong><span>tecnologías con documentación</span></li>
+            <li><strong>0 €</strong><span>sin APIs de pago</span></li>
+            <li><strong>Offline</strong><span>con los paquetes descargados</span></li>
+            <li><strong>MIT</strong><span>licencia libre</span></li>
+          </ul>
+
+          <h2 class="section-title">Cómo se construye cada respuesta</h2>
+          <p class="muted">
+            Un modelo pequeño que corre en tu equipo no se sabe de memoria cada API. Por eso, antes de responder, la app
+            busca la documentación oficial y se la pasa al modelo.
+          </p>
+          <ol class="flow" style="margin-top: 20px">
+            <li>
+              <span class="flow-label">1 · Pregunta</span>
+              <h3>Escribes en español</h3>
+              <p>«¿Cómo espero a que terminen varias promesas a la vez?»</p>
+            </li>
+            <li>
+              <span class="flow-label">2 · Búsqueda</span>
+              <h3>Términos en inglés</h3>
+              <p>El modelo lo traduce al nombre exacto de la API: <code>Promise.all</code>.</p>
+            </li>
+            <li>
+              <span class="flow-label">3 · Documentación</span>
+              <h3>Contenido oficial</h3>
+              <p>Sintaxis, parámetros y ejemplos de MDN, desde tu equipo o desde la web.</p>
+            </li>
+            <li>
+              <span class="flow-label">4 · Respuesta</span>
+              <h3>Con fuentes</h3>
+              <p>La IA responde apoyándose en esa documentación y te enseña las fuentes.</p>
+            </li>
+          </ol>
+
+          <h2 class="section-title">Empieza en cuatro pasos</h2>
+          <ol class="steps">
+            <li>
+              <span class="step-num">1</span>
+              <h3>Instala Ollama</h3>
+              <p>
+                Es el motor de IA local, gratuito. Descárgalo de
+                <a href="https://ollama.com" rel="noopener">ollama.com</a> y ejecuta
+                <code>ollama pull qwen2.5-coder:3b</code>.
+              </p>
+            </li>
+            <li>
+              <span class="step-num">2</span>
+              <h3>Instala la app</h3>
+              <p>Descarga el instalador para tu sistema. No pide registro ni cuenta.</p>
+            </li>
+            <li>
+              <span class="step-num">3</span>
+              <h3>Descarga documentación</h3>
+              <p>Opcional: en Configuración, baja la documentación de tus tecnologías para usarla sin conexión.</p>
+            </li>
+            <li>
+              <span class="step-num">4</span>
+              <h3>Pregunta o pega código</h3>
+              <p>Pide explicaciones, encuentra errores, optimiza o genera tests de tu código.</p>
+            </li>
+          </ol>
+
+          <div class="cta-band">
+            <div>
+              <h2>¿Quieres probarla?</h2>
+              <p>Gratis y de código abierto. Solo necesitas Ollama y unos 2&nbsp;GB para el modelo.</p>
+            </div>
+            <a class="btn btn-primary btn-lg" href="#/descargas">Ir a descargas</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ CARACTERÍSTICAS ══════════════════ -->
+      <section class="view" data-route="/caracteristicas">
+        <div class="container">
+          <h1 class="page-title">Características</h1>
+          <p class="page-lead">
+            Un asistente pensado para modelos pequeños y locales: en vez de pedirle al modelo que lo sepa todo, le da la
+            documentación que necesita en cada pregunta.
+          </p>
+
+          <div class="card-grid">
+            <article class="card">
+              <span class="card-icon">📚</span>
+              <h3>Documentación oficial en cada respuesta</h3>
+              <p>
+                La IA recibe el contenido real de la documentación (firmas, parámetros, ejemplos), no solo un enlace, y
+                te muestra las fuentes que ha consultado.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">🔌</span>
+              <h3>Funciona sin conexión</h3>
+              <p>
+                Descarga la documentación de hasta 10 tecnologías desde la propia app. Las búsquedas locales tardan
+                milisegundos.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">🧠</span>
+              <h3>Búsqueda semántica</h3>
+              <p>
+                Con el modelo <code>nomic-embed-text</code> encuentra «quitar los repetidos de una lista» aunque no
+                sepas que se hace con <code>Set</code>.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">🇪🇸</span>
+              <h3>Pregunta en español</h3>
+              <p>
+                La documentación está en inglés; la app traduce tu pregunta a los términos exactos
+                (<code>fs.readFile</code>,
+                <code>useEffect</code>) antes de buscar.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">🛠️</span>
+              <h3>Analiza tu código</h3>
+              <p>
+                Pega un fragmento y obtén qué hace, qué falla y una versión corregida, con la documentación de las APIs
+                que usa.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">⚡</span>
+              <h3>Acciones rápidas</h3>
+              <p>Optimizar, Explicar, Corregir errores y Generar tests con un clic sobre el código que hayas pegado.</p>
+            </article>
+            <article class="card">
+              <span class="card-icon">💬</span>
+              <h3>Historial con búsqueda</h3>
+              <p>Tus conversaciones se guardan en tu equipo y puedes buscarlas por título.</p>
+            </article>
+            <article class="card">
+              <span class="card-icon">🔒</span>
+              <h3>Tu código se queda en tu equipo</h3>
+              <p>
+                La IA corre en local con Ollama: tu código no se envía a ningún servicio de IA externo. Consulta los
+                detalles en <a href="#/documentacion">Documentación</a>.
+              </p>
+            </article>
+          </div>
+
+          <h2 class="section-title">Documentación disponible</h2>
+          <p class="muted">
+            Sin descargar nada, la app consulta la web oficial de cada tecnología. Con el paquete descargado (desde
+            <a href="https://devdocs.io" rel="noopener">DevDocs</a>) la búsqueda es local, más rápida y funciona sin
+            conexión.
+          </p>
+          <div class="table-wrap" style="margin-top: 18px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tecnología</th>
+                  <th>Online (sin descargar)</th>
+                  <th>Paquete offline (aprox.)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>JavaScript</td>
+                  <td><span class="check">✔</span> MDN, contenido completo</td>
+                  <td>12 MB</td>
+                </tr>
+                <tr>
+                  <td>CSS</td>
+                  <td><span class="check">✔</span> MDN, contenido completo</td>
+                  <td>16 MB</td>
+                </tr>
+                <tr>
+                  <td>Web APIs (DOM, fetch…)</td>
+                  <td><span class="check">✔</span> MDN, contenido completo</td>
+                  <td>66 MB</td>
+                </tr>
+                <tr>
+                  <td>React</td>
+                  <td><span class="check">✔</span> react.dev</td>
+                  <td>9 MB</td>
+                </tr>
+                <tr>
+                  <td>Vue</td>
+                  <td><span class="check">✔</span> vuejs.org</td>
+                  <td>1,5 MB</td>
+                </tr>
+                <tr>
+                  <td>Angular</td>
+                  <td><span class="check">✔</span> angular.dev</td>
+                  <td>9 MB</td>
+                </tr>
+                <tr>
+                  <td>Node.js</td>
+                  <td><span class="check">✔</span> API oficial de Node.js</td>
+                  <td>7 MB</td>
+                </tr>
+                <tr>
+                  <td>Express</td>
+                  <td><span class="check">✔</span> expressjs.com</td>
+                  <td>0,5 MB</td>
+                </tr>
+                <tr>
+                  <td>TypeScript</td>
+                  <td><span class="cross">—</span> solo enlace</td>
+                  <td>2 MB</td>
+                </tr>
+                <tr>
+                  <td>MongoDB</td>
+                  <td><span class="cross">—</span> solo enlace</td>
+                  <td>2 MB (Mongoose)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 class="section-title">Modelos de IA</h2>
+          <p class="muted">
+            Se descargan con Ollama. Puedes cambiar de modelo de chat en Configuración; si no lo tienes, la app lo
+            descarga.
+          </p>
+          <div class="table-wrap" style="margin-top: 18px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Modelo</th>
+                  <th>Para qué</th>
+                  <th>Tamaño</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>qwen2.5-coder:3b</code></td>
+                  <td>Chat (por defecto): especializado en código</td>
+                  <td>~1,9 GB</td>
+                </tr>
+                <tr>
+                  <td><code>deepseek-coder:1.3b</code></td>
+                  <td>Chat: el más rápido, para equipos modestos</td>
+                  <td>~0,8 GB</td>
+                </tr>
+                <tr>
+                  <td><code>llama3.2:3b</code></td>
+                  <td>Chat: generalista</td>
+                  <td>~2 GB</td>
+                </tr>
+                <tr>
+                  <td><code>nomic-embed-text</code></td>
+                  <td>Opcional: búsqueda semántica en la documentación offline</td>
+                  <td>~275 MB</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ CAPTURAS ══════════════════ -->
+      <section class="view" data-route="/capturas">
+        <div class="container">
+          <h1 class="page-title">Capturas</h1>
+          <p class="page-lead">
+            Capturas reales de la aplicación con <code>qwen2.5-coder:3b</code> en local: las respuestas son las que dio
+            el modelo, sin retocar. Haz clic para ampliar.
+          </p>
+
+          <div class="gallery" id="gallery">
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/02-respuesta.png"
+                data-caption="Pregunta en español respondida con la documentación de MDN descargada: Promise.all con un ejemplo.">
+                <img
+                  src="assets/screenshots/02-respuesta.png"
+                  alt="Respuesta sobre Promise.all con un ejemplo de código"
+                  loading="lazy" />
+              </button>
+              <figcaption>
+                <strong>Pregunta y respuesta</strong> — la app encontró <code>Promise.all</code> en la documentación de
+                MDN descargada y el modelo respondió con un ejemplo.
+              </figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/03-analisis-codigo.png"
+                data-caption="Análisis de código: sort() sin función de comparación ordena los números como texto.">
+                <img
+                  src="assets/screenshots/03-analisis-codigo.png"
+                  alt="Análisis de un fragmento de código que usa sort() con números"
+                  loading="lazy" />
+              </button>
+              <figcaption>
+                <strong>Análisis de código</strong> — detecta que <code>sort()</code> sin comparador ordena los números
+                como texto y propone la corrección.
+              </figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/06-react.png"
+                data-caption="Pregunta de React respondida con la documentación de useEffect.">
+                <img
+                  src="assets/screenshots/06-react.png"
+                  alt="Respuesta sobre useEffect con un array de dependencias vacío"
+                  loading="lazy" />
+              </button>
+              <figcaption>
+                <strong>React</strong> — ejecutar un efecto solo al montar el componente, con la documentación de
+                <code>useEffect</code>.
+              </figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/04-documentacion-offline.png"
+                data-caption="Configuración → Documentación offline, con JavaScript, React y Express descargados.">
+                <img
+                  src="assets/screenshots/04-documentacion-offline.png"
+                  alt="Lista de paquetes de documentación offline con tres paquetes instalados"
+                  loading="lazy" />
+              </button>
+              <figcaption>
+                <strong>Documentación offline</strong> — cada paquete se descarga, se indexa y queda listo para la
+                búsqueda semántica.
+              </figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/05-descargando.png"
+                data-caption="Instalando la documentación de JavaScript: preparando la búsqueda semántica.">
+                <img
+                  src="assets/screenshots/05-descargando.png"
+                  alt="Barra de progreso de la instalación de un paquete de documentación"
+                  loading="lazy" />
+              </button>
+              <figcaption>
+                <strong>Instalación en curso</strong> — descarga, indexado y preparación de la búsqueda semántica, con
+                su progreso.
+              </figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/07-historial.png"
+                data-caption="Historial filtrado por «espero», con la conversación abierta y las fuentes que consultó.">
+                <img
+                  src="assets/screenshots/07-historial.png"
+                  alt="Barra lateral con el historial de conversaciones filtrado"
+                  loading="lazy" />
+              </button>
+              <figcaption>
+                <strong>Historial y fuentes</strong> — las conversaciones se guardan en tu equipo y se pueden buscar;
+                cada respuesta conserva las fuentes que consultó.
+              </figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/01-inicio.png"
+                data-caption="Pantalla inicial de Coding Assistant Free con preguntas de ejemplo.">
+                <img src="assets/screenshots/01-inicio.png" alt="Pantalla inicial de la aplicación" loading="lazy" />
+              </button>
+              <figcaption>
+                <strong>Pantalla inicial</strong> — preguntas de ejemplo, acciones rápidas y el selector de
+                documentación.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ DESCARGAS ══════════════════ -->
+      <section class="view" data-route="/descargas">
+        <div class="container">
+          <h1 class="page-title">Descargas</h1>
+          <p class="page-lead">
+            Última versión: <strong id="releaseTag">—</strong>
+            <span id="releaseDate" class="muted"></span>
+          </p>
+
+          <div class="notice" id="releaseNotice" hidden>
+            <span class="notice-icon" aria-hidden="true">🚧</span>
+            <p>
+              <strong>Todavía no hay ninguna versión publicada.</strong> Los instaladores aparecerán aquí en cuanto se
+              publique la primera. Mientras tanto puedes
+              <a href="#/descargas" data-scroll-to="compilar">ejecutarla desde el código</a>.
+            </p>
+          </div>
+
+          <div class="download-grid" id="downloadGrid">
+            <article class="download-card" data-os="windows">
+              <span class="os-icon" aria-hidden="true">🪟</span>
+              <h3>Windows</h3>
+              <p class="os-detail">Instalador <code>.exe</code> · 64 bits</p>
+              <a
+                class="btn btn-primary"
+                data-dl="windows"
+                href="https://github.com/cmurestudillos/coding-assistant-free/releases/latest"
+                >Descargar</a
+              >
+              <p class="dl-size" data-size="windows"></p>
+            </article>
+
+            <article class="download-card" data-os="mac">
+              <span class="os-icon" aria-hidden="true">🍎</span>
+              <h3>macOS</h3>
+              <p class="os-detail">Imagen <code>.dmg</code></p>
+              <a
+                class="btn btn-primary"
+                data-dl="mac"
+                href="https://github.com/cmurestudillos/coding-assistant-free/releases/latest"
+                >Descargar</a
+              >
+              <p class="dl-size" data-size="mac"></p>
+            </article>
+
+            <article class="download-card" data-os="linux">
+              <span class="os-icon" aria-hidden="true">🐧</span>
+              <h3>Linux</h3>
+              <p class="os-detail">Ejecutable <code>.AppImage</code></p>
+              <a
+                class="btn btn-primary"
+                data-dl="linux"
+                href="https://github.com/cmurestudillos/coding-assistant-free/releases/latest"
+                >Descargar</a
+              >
+              <p class="dl-size" data-size="linux"></p>
+            </article>
+          </div>
+
+          <p class="muted small">
+            ¿Prefieres ver todos los archivos?
+            <a href="https://github.com/cmurestudillos/coding-assistant-free/releases" rel="noopener"
+              >Todas las versiones en GitHub</a
+            >.
+          </p>
+
+          <h2 class="section-title">Antes de instalar: Ollama</h2>
+          <div class="note-grid">
+            <div class="note info">
+              <h3>1. Instala Ollama</h3>
+              <p>
+                Descárgalo de <a href="https://ollama.com" rel="noopener">ollama.com</a>. Queda ejecutándose en segundo
+                plano; si no fuera así, lánzalo con <code>ollama serve</code>.
+              </p>
+            </div>
+            <div class="note info">
+              <h3>2. Descarga el modelo de chat</h3>
+              <p>Unos 1,9 GB, solo la primera vez:</p>
+              <pre class="code-block"><code>ollama pull qwen2.5-coder:3b</code></pre>
+            </div>
+            <div class="note info">
+              <h3>3. Opcional: búsqueda semántica</h3>
+              <p>Unos 275 MB. Mejora la búsqueda en la documentación offline:</p>
+              <pre class="code-block"><code>ollama pull nomic-embed-text</code></pre>
+            </div>
+          </div>
+
+          <h2 class="section-title">Notas de instalación</h2>
+          <div class="note-grid">
+            <div class="note">
+              <h3>🪟 Windows</h3>
+              <p>
+                SmartScreen puede avisar de que el editor es desconocido porque el instalador no está firmado. Pulsa
+                <em>Más información → Ejecutar de todas formas</em>.
+              </p>
+            </div>
+            <div class="note">
+              <h3>🍎 macOS</h3>
+              <p>
+                Si Gatekeeper bloquea la app, ábrela con clic derecho → <em>Abrir</em>, o ejecuta
+                <code>xattr -cr "/Applications/Coding Assistant Free.app"</code>.
+              </p>
+            </div>
+            <div class="note">
+              <h3>🐧 Linux</h3>
+              <p>
+                Dale permisos de ejecución al AppImage con <code>chmod +x Coding.Assistant.Free-*.AppImage</code> y
+                lánzalo con doble clic.
+              </p>
+            </div>
+          </div>
+
+          <h2 class="section-title" id="compilar">Ejecutar desde el código</h2>
+          <pre class="code-block"><code>git clone https://github.com/cmurestudillos/coding-assistant-free.git
+cd coding-assistant-free
+pnpm install
+
+pnpm start           # ejecutar en desarrollo
+pnpm package:win     # generar instalador de Windows
+pnpm package:mac     # generar imagen de macOS
+pnpm package:linux   # generar AppImage</code></pre>
+          <p class="muted small">
+            Requisitos: Node.js 20 o superior, pnpm 11 y Ollama. Los instaladores se generan en la carpeta
+            <code>release/</code>; cada uno debe compilarse en su propio sistema operativo.
+          </p>
+        </div>
+      </section>
+
+      <!-- ══════════════════ DOCUMENTACIÓN ══════════════════ -->
+      <section class="view" data-route="/documentacion">
+        <div class="container docs-layout">
+          <article class="docs-body">
+            <h1 class="page-title">Documentación</h1>
+
+            <h2 id="requisitos">Requisitos</h2>
+            <p>
+              <strong>Ollama</strong> con al menos el modelo <code>qwen2.5-coder:3b</code> (ver
+              <a href="#/descargas">Descargas</a>). Funciona con 8 GB de RAM; con una tarjeta gráfica las respuestas
+              llegan en pocos segundos, y en CPU tardan más.
+            </p>
+
+            <h2 id="uso">Guía de uso</h2>
+            <h3>1. Preguntar</h3>
+            <p>
+              Escribe tu pregunta y pulsa <strong>Buscar</strong> (o <kbd>Enter</kbd>; <kbd>Shift</kbd>+<kbd>Enter</kbd>
+              para un salto de línea). Debajo de la respuesta aparecen las fuentes consultadas, numeradas.
+            </p>
+            <p>
+              El selector <strong>Documentación</strong> decide dónde buscar: <em>automática</em> detecta la tecnología
+              por tu pregunta, <em>Sin documentación</em> responde solo con el modelo, y también puedes fijar una
+              tecnología concreta.
+            </p>
+
+            <h3>2. Analizar código</h3>
+            <p>
+              Pega el código entre <code>```</code> seguido de tu pregunta. La app busca la documentación de las APIs
+              que usa y responde con qué hace, qué falla y una versión corregida. Con el código pegado, los botones
+              <em>Optimizar</em>, <em>Explicar</em>, <em>Corregir errores</em> y <em>Generar tests</em> lanzan esa
+              petición directamente.
+            </p>
+
+            <h3>3. Documentación offline</h3>
+            <p>
+              En <strong>⚙️ Configuración → Documentación offline</strong>, pulsa <em>Descargar</em> en las tecnologías
+              que uses. Cada paquete se descarga, se indexa y, si tienes <code>nomic-embed-text</code>, se prepara la
+              búsqueda semántica. Si instalas ese modelo más tarde, el botón <em>Activar semántica</em> la añade a los
+              paquetes que ya tenías. Cuando haya una versión nueva de la documentación aparecerá <em>Actualizar</em>.
+            </p>
+
+            <h3>4. Cambiar de modelo</h3>
+            <p>
+              En Configuración puedes elegir otro modelo de chat. Si no está descargado, la app se lo pide a Ollama.
+            </p>
+
+            <h2 id="busqueda">Cómo se busca la documentación</h2>
+            <p>
+              Para cada pregunta, el modelo genera primero unos términos de búsqueda en inglés. Después, si la
+              tecnología está descargada, la app busca en su índice local combinando búsqueda por texto (BM25) y, si
+              está activada, búsqueda semántica. Si no está descargada, consulta la web oficial. Los dos documentos más
+              relevantes se pasan al modelo junto a tu pregunta.
+            </p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Paso</th>
+                    <th>Tiempo medido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Términos de búsqueda (modelo)</td>
+                    <td>0,1–0,3 s</td>
+                  </tr>
+                  <tr>
+                    <td>Búsqueda en la documentación offline</td>
+                    <td>~25 ms</td>
+                  </tr>
+                  <tr>
+                    <td>Búsqueda en la web oficial</td>
+                    <td>0,2–0,8 s</td>
+                  </tr>
+                  <tr>
+                    <td>Respuesta completa</td>
+                    <td>2–8 s</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="muted small">
+              Medido con <code>qwen2.5-coder:3b</code> en una NVIDIA RTX 4060. En CPU los tiempos del modelo son
+              mayores.
+            </p>
+
+            <h2 id="privacidad">Privacidad y datos</h2>
+            <p>
+              La IA corre en tu equipo: ni tus preguntas ni tu código se envían a ningún servicio de IA. Las
+              conversaciones y la documentación descargada se guardan en una base de datos local (<code
+                >%APPDATA%\snippet-bot-assistant\assistant.db</code
+              >
+              en Windows).
+            </p>
+            <p>
+              Solo hay conexiones a internet para descargar paquetes de documentación y, cuando una tecnología no está
+              descargada, para consultar su web oficial. En ese caso, lo único que se envía son los términos de búsqueda
+              que genera el modelo (unas pocas palabras, como <code>Promise.all</code>), nunca tu pregunta ni tu código.
+              Si eliges <em>Sin documentación</em> o la tecnología está descargada, la consulta no sale de tu equipo.
+            </p>
+
+            <h2 id="problemas">Problemas frecuentes</h2>
+            <div class="faq">
+              <details>
+                <summary>«Ollama no está conectado»</summary>
+                <p>
+                  Comprueba que Ollama está en marcha (en Linux, <code>ollama serve</code>) y que tienes el modelo:
+                  <code>ollama list</code>. La app lo busca en <code>localhost:11434</code>.
+                </p>
+              </details>
+              <details>
+                <summary>La primera respuesta tarda mucho</summary>
+                <p>
+                  Ollama tiene que cargar el modelo en memoria. La app lo precarga al arrancar y lo mantiene cargado 30
+                  minutos tras el último uso, así que las siguientes respuestas son rápidas.
+                </p>
+              </details>
+              <details>
+                <summary>La respuesta no cita las fuentes o no es correcta</summary>
+                <p>
+                  Los modelos de 3B parámetros son pequeños: no siempre citan y a veces se equivocan aunque tengan la
+                  documentación correcta. Las fuentes consultadas se muestran siempre debajo de la respuesta para que
+                  puedas comprobarlo. Si tu equipo lo permite, un modelo mayor razona mejor.
+                </p>
+              </details>
+              <details>
+                <summary>La descarga de documentación se queda parada</summary>
+                <p>
+                  El servidor de DevDocs a veces tarda en responder. La app reintenta sola; si falla, vuelve a pulsar
+                  <em>Descargar</em>. El paquete de Web APIs es el más grande (unos 66 MB).
+                </p>
+              </details>
+              <details>
+                <summary>No encuentra conceptos generales (por ejemplo, closures)</summary>
+                <p>
+                  Los paquetes de documentación contienen sobre todo la referencia de cada API, no las guías
+                  conceptuales. Para esas preguntas el modelo responde con su propio conocimiento.
+                </p>
+              </details>
+            </div>
+
+            <h2 id="arquitectura">Arquitectura</h2>
+            <pre class="code-block"><code>main.js            # proceso principal: IPC con la interfaz
+preload.js         # puente seguro (contextIsolation activo)
+renderer.js        # interfaz: chat, historial y paquetes de documentación
+src/
+├── ai-engine.js     # Ollama: chat, términos de búsqueda y embeddings
+├── scraper.js       # detección de tecnología y búsqueda (local y web)
+├── docs-index.js    # paquetes DevDocs, índice FTS5, vectores y búsqueda híbrida
+├── docs-sources.js  # fuentes de documentación por tecnología
+├── database.js      # SQLite: conversaciones, mensajes y caché
+└── markdown.js      # conversión de HTML a Markdown</code></pre>
+            <p>
+              Construida con <strong>Electron</strong>, <strong>SQLite</strong> (con búsqueda de texto completo FTS5) y
+              <strong>Ollama</strong>. Sin frameworks de interfaz: HTML, CSS y JavaScript.
+            </p>
+
+            <h2 id="roadmap">Roadmap</h2>
+            <ul class="roadmap">
+              <li><span class="tag">Próximo</span> Respuestas en streaming, exportar conversaciones a Markdown</li>
+              <li>
+                <span class="tag">Después</span> Recomendar un modelo mayor según la tarjeta gráfica, guías conceptuales
+                además de la referencia
+              </li>
+              <li><span class="tag">Idea</span> Extensión de VS Code que use el mismo motor local</li>
+            </ul>
+
+            <h2 id="contribuir">Contribuir</h2>
+            <p>
+              Los issues y pull requests son bienvenidos. Abre un
+              <a href="https://github.com/cmurestudillos/coding-assistant-free/issues" rel="noopener">issue</a>
+              describiendo el problema (con pasos, sistema operativo, modelo de Ollama y una captura) o la funcionalidad
+              que echas de menos.
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <div>
+          <p class="brand-sm">🤖 Coding Assistant Free</p>
+          <p class="muted small">Licencia MIT · Hecho por Carlos Mur</p>
+        </div>
+        <nav aria-label="Enlaces del pie">
+          <a href="https://github.com/cmurestudillos/coding-assistant-free" rel="noopener">Repositorio</a>
+          <a href="https://github.com/cmurestudillos/coding-assistant-free/releases" rel="noopener">Versiones</a>
+          <a href="https://github.com/cmurestudillos/coding-assistant-free/issues" rel="noopener">Reportar un bug</a>
+          <a href="https://github.com/cmurestudillos" rel="noopener">@cmurestudillos</a>
+        </nav>
+      </div>
+    </footer>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" hidden>
+      <button class="lightbox-close" id="lightboxClose" aria-label="Cerrar">✕</button>
+      <figure>
+        <img id="lightboxImg" src="" alt="" />
+        <figcaption id="lightboxCaption"></figcaption>
+      </figure>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>
