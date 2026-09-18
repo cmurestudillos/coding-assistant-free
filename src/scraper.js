@@ -185,7 +185,7 @@ class DocsScraper {
 
     // 2) Documentación online
     try {
-      const results = await this.searchProvider(tech, query, tokens);
+      const results = await this.searchProvider(tech, searchQuery, tokens);
       return results.slice(0, MAX_RESULTS);
     } catch (error) {
       console.error(`Error buscando en ${tech.name}:`, error.message);
@@ -193,10 +193,13 @@ class DocsScraper {
     }
   }
 
-  searchProvider(tech, query, tokens) {
+  // Privacidad: solo la búsqueda de MDN envía texto a la web, y únicamente los términos
+  // generados por el modelo, nunca el mensaje del usuario (que puede llevar su código).
+  // El resto de proveedores descargan URLs fijas y ordenan los resultados en local
+  searchProvider(tech, searchQuery, tokens) {
     switch (tech.provider) {
       case 'mdn':
-        return this.searchMDN(query, tech, tokens);
+        return searchQuery ? this.searchMDN(searchQuery, tech, tokens) : Promise.resolve(this.staticLinks(tech));
       case 'nodeApi':
         return this.searchNodeApi(tech, tokens);
       case 'llmsTxt':

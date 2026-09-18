@@ -96,7 +96,9 @@ const docsSources = {
     baseUrl: 'https://expressjs.com',
     textUrls: ['https://expressjs.com/llms/api-5x.txt', 'https://expressjs.com/llms/guides-5x.txt'],
     priority: 10,
-    keywords: ['express', 'expressjs', 'middleware', 'router', 'req', 'res'],
+    // Sin 'req', 'res' ni 'router': son nombres habituales en cualquier código (fetch,
+    // react-router, vue-router) y desviaban las preguntas a la documentación de Express
+    keywords: ['express', 'expressjs', 'middleware'],
     links: [
       {
         title: 'Express Guide',

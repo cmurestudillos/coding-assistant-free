@@ -740,6 +740,13 @@ async function loadDocsPacks() {
       docsPacks = result.packs;
       docsPacksOnline = result.online;
       embedAvailable = result.embedAvailable;
+      // Progreso que ya no corresponde a ninguna instalación en curso (p. ej. si la ventana
+      // se recargó a mitad): sin esto la barra se queda congelada y los botones desactivados
+      result.packs.forEach(pack => {
+        if (!pack.installing) {
+          delete docsPackProgress[pack.key];
+        }
+      });
     }
   } catch (error) {
     console.error('Error loading docs packs:', error);
