@@ -1,5 +1,13 @@
 const axios = require('axios');
 
+// Ejemplos para extractSearchQuery: pregunta → términos de búsqueda en inglés
+const SEARCH_QUERY_EXAMPLES = [
+  ['¿Cómo leo un fichero en node?', 'fs.readFile'],
+  ['¿Cómo recorro un array y devuelvo otro con los valores cambiados?', 'Array.prototype.map'],
+  ['centrar un div vertical y horizontalmente', 'flexbox align-items justify-content'],
+  ['¿Cómo guardo el estado de un contador en un componente de React?', 'useState'],
+];
+
 class AIEngine {
   constructor() {
     this.ollamaUrl = 'http://localhost:11434';
@@ -10,6 +18,48 @@ class AIEngine {
       { name: 'llama3.2:3b', description: 'Llama 3.2 3B - Equilibrado', size: '2GB' },
     ];
     this.isOllamaRunning = false;
+    // Ollama usa por defecto un contexto pequeño y recorta sin avisar lo que no cabe.
+    // Todas las llamadas deben usar el mismo valor: si cambia, Ollama recarga el modelo (~5 s)
+    this.contextWindow = 8192;
+    // Cuánto tiempo mantiene Ollama el modelo en memoria sin uso (por defecto 5 min;
+    // pasado ese tiempo, la siguiente pregunta espera a que se vuelva a cargar)
+    this.keepAlive = '30m';
+    // Modelo de embeddings para la búsqueda semántica en la documentación offline (opcional)
+    this.embedModel = 'nomic-embed-text';
+  }
+
+  // Carga los modelos en memoria en segundo plano para que la primera pregunta no espere
+  // a la carga en frío. No hace nada si Ollama no está corriendo
+  async warmUp() {
+    try {
+      await axios.post(
+        `${this.ollamaUrl}/api/generate`,
+        { model: this.model, prompt: '', keep_alive: this.keepAlive, options: { num_ctx: this.contextWindow } },
+        { timeout: 120000 }
+      );
+      if (await this.hasEmbedModel()) {
+        await this.embed(['search_query: warm up']);
+      }
+    } catch (error) {
+      console.warn('No se pudo precargar el modelo:', error.code || error.message);
+    }
+  }
+
+  // ¿Está instalado el modelo de embeddings? (los nombres llegan como "nomic-embed-text:latest")
+  async hasEmbedModel() {
+    const status = await this.checkOllama();
+    return status.models.some(model => model.name.split(':')[0] === this.embedModel);
+  }
+
+  // Vectores (normalizados) de varios textos. nomic-embed-text espera el prefijo
+  // "search_document: " en los textos indexados y "search_query: " en las búsquedas
+  async embed(texts) {
+    const { data } = await axios.post(
+      `${this.ollamaUrl}/api/embed`,
+      { model: this.embedModel, input: texts, keep_alive: this.keepAlive, truncate: true },
+      { timeout: 120000 }
+    );
+    return data.embeddings;
   }
 
   async checkOllama() {
@@ -23,38 +73,43 @@ class AIEngine {
     }
   }
 
-  async generate(prompt, context = []) {
+  // history: mensajes anteriores [{ role: 'user' | 'assistant', content }]
+  // docs: documentación ya formateada y numerada para citar como [n]
+  async generate(prompt, history = [], docs = '') {
     try {
-      const systemPrompt = `Eres un asistente experto en programación. Responde de forma directa y concisa.
-      
+      let systemPrompt = `Eres un asistente experto en programación. Responde de forma directa y concisa.
+
 REGLAS:
+- Responde en el mismo idioma que el usuario
 - Genera código limpio y funcional
-- Usa \`\`\`javascript para bloques de código
+- Usa bloques de código con el lenguaje indicado (por ejemplo \`\`\`javascript)
 - Sé breve, máximo 500 palabras
 - Ve directo al punto`;
 
-      let fullPrompt = systemPrompt + '\n\n';
+      let userContent = prompt;
 
-      if (context.length > 0) {
-        context.forEach(msg => {
-          fullPrompt += `${msg.role === 'user' ? 'Usuario' : 'Asistente'}: ${msg.content}\n`;
-        });
-        fullPrompt += '\n';
+      if (docs) {
+        systemPrompt += `
+- Se te da documentación oficial numerada. Úsala como fuente principal y cítala con [1], [2]...
+- Si la documentación no cubre la pregunta, dilo y responde con tu propio conocimiento`;
+        // La documentación va en el último mensaje para que Ollama no la descarte al recortar el
+        // contexto. El recordatorio de citar va al final: es donde un modelo pequeño más caso hace
+        userContent = `Documentación oficial relevante:\n\n${docs}\n\n===\n\nPregunta: ${prompt}\n\n(Apóyate en la documentación de arriba y cita la fuente con [1] o [2] junto a lo que saques de ella.)`;
       }
 
-      fullPrompt += `Usuario: ${prompt}\n\nAsistente:`;
-
       const response = await axios.post(
-        `${this.ollamaUrl}/api/generate`,
+        `${this.ollamaUrl}/api/chat`,
         {
           model: this.model,
-          prompt: fullPrompt,
+          messages: [{ role: 'system', content: systemPrompt }, ...history, { role: 'user', content: userContent }],
           stream: false,
+          keep_alive: this.keepAlive,
           options: {
             temperature: 0.3,
             top_p: 0.9,
             top_k: 40,
             num_predict: 800,
+            num_ctx: this.contextWindow,
           },
         },
         {
@@ -64,7 +119,7 @@ REGLAS:
 
       return {
         success: true,
-        response: response.data.response,
+        response: response.data.message.content,
         model: this.model,
       };
     } catch (error) {
@@ -84,7 +139,45 @@ REGLAS:
     }
   }
 
-  async analyzeCode(code, language, question = '') {
+  // Convierte la pregunta (normalmente en español) en términos de búsqueda en inglés,
+  // que es el idioma de la documentación oficial. Devuelve '' si no lo consigue.
+  async extractSearchQuery(question) {
+    try {
+      const response = await axios.post(
+        `${this.ollamaUrl}/api/chat`,
+        {
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: `You turn programming questions into a short English search query (1-4 words) for official documentation.
+Prefer the exact API name that answers the question. Reply only with JSON: {"query": "..."}`,
+            },
+            // Ejemplos: un modelo pequeño los imita mejor que una instrucción
+            ...SEARCH_QUERY_EXAMPLES.flatMap(([question, query]) => [
+              { role: 'user', content: question },
+              { role: 'assistant', content: JSON.stringify({ query }) },
+            ]),
+            { role: 'user', content: question.substring(0, 1000) },
+          ],
+          stream: false,
+          format: 'json',
+          keep_alive: this.keepAlive,
+          // Mismo num_ctx que generate(): si no, Ollama recarga el modelo en cada llamada
+          options: { temperature: 0, num_predict: 40, num_ctx: this.contextWindow },
+        },
+        { timeout: 60000 }
+      );
+
+      const { query } = JSON.parse(response.data.message.content);
+      return typeof query === 'string' ? query.trim() : '';
+    } catch (error) {
+      console.error('Error generando términos de búsqueda:', error.code || error.message);
+      return '';
+    }
+  }
+
+  async analyzeCode(code, language, question = '', docs = '') {
     const prompt = `Analiza este código ${language}:
 
 \`\`\`${language}
@@ -98,7 +191,7 @@ Responde brevemente con:
 2. Errores (si hay)
 3. Código mejorado`;
 
-    return await this.generate(prompt);
+    return await this.generate(prompt, [], docs);
   }
 
   async generateCode(description, language = 'javascript') {
@@ -147,6 +240,7 @@ Proporciona:
     }
 
     this.model = modelName;
+    this.warmUp();
     return { success: true, model: modelName };
   }
 

@@ -25,6 +25,7 @@ const sendBtnText = document.getElementById('sendBtnText');
 const sendBtnLoader = document.getElementById('sendBtnLoader');
 const newChatBtn = document.getElementById('newChatBtn');
 const cacheStatus = document.getElementById('cacheStatus');
+const techSelect = document.getElementById('techSelect');
 
 // Event Listeners básicos
 sendBtn.addEventListener('click', () => sendMessage(false));
@@ -164,7 +165,8 @@ async function sendMessage(isRetry = false) {
   }
 
   try {
-    const result = await window.electronAPI.sendMessage(message);
+    const technology = techSelect ? techSelect.value : '';
+    const result = await window.electronAPI.sendMessage(message, { technology });
 
     if (result.success) {
       addMessage(result.message, 'assistant', result.sources);
@@ -338,12 +340,14 @@ function addMessage(content, role, sources = null) {
     sourcesDiv.className = 'message-sources';
     sourcesDiv.innerHTML = '<strong>Fuentes consultadas:</strong>';
 
-    sources.forEach(source => {
+    // Numeradas igual que en el prompt, para que coincidan con las citas [n] de la respuesta
+    sources.forEach((source, index) => {
       const sourceItem = document.createElement('div');
       sourceItem.className = 'source-item';
       sourceItem.innerHTML = `
-        <span class="source-badge">${source.source}</span>
-        <a href="${source.url}" target="_blank">${source.title}</a>
+        <span class="source-index">[${index + 1}]</span>
+        <span class="source-badge">${escapeHtml(source.source)}</span>
+        <a href="${escapeHtml(source.url)}" target="_blank">${escapeHtml(source.title)}</a>
       `;
       sourcesDiv.appendChild(sourceItem);
     });
@@ -357,6 +361,23 @@ function addMessage(content, role, sources = null) {
 }
 
 function formatMessage(text) {
+  // El código se aparta antes de aplicar el resto del formato y se vuelve a poner al final.
+  // Si no, las demás reglas se aplican también dentro del código y lo estropean: el código
+  // inline se comía las comillas invertidas de los template literals, "**" se volvía negrita...
+  const codeParts = [];
+  const protect = html => `\uE000${codeParts.push(html) - 1}\uE000`;
+
+  // Bloques de código
+  text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) =>
+    protect(`<pre><code class="language-${lang || 'javascript'}">${escapeHtml(dedent(code))}</code></pre>`)
+  );
+
+  // Código inline
+  text = text.replace(/`([^`\n]+)`/g, (match, code) => protect(`<code>${escapeHtml(code)}</code>`));
+
+  // El resto es texto del modelo o del usuario: escaparlo para que no se interprete como HTML
+  text = escapeHtml(text);
+
   // Convertir headers markdown
   text = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
   text = text.replace(/^## (.*$)/gim, '<h3>$1</h3>');
@@ -364,24 +385,26 @@ function formatMessage(text) {
   // Convertir negrita
   text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-  // Convertir bloques de código
-  text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-    return `<pre><code class="language-${lang || 'javascript'}">${escapeHtml(code.trim())}</code></pre>`;
-  });
+  // Convertir links (solo http/https: nada de "javascript:")
+  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
-  // Convertir código inline
-  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-  // Convertir links
-  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  // Convertir separadores (solo una línea que sea exactamente "---")
+  text = text.replace(/^---$/gm, '<hr>');
 
   // Convertir saltos de línea
   text = text.replace(/\n/g, '<br>');
 
-  // Convertir separadores
-  text = text.replace(/---/g, '<hr>');
+  // Devolver el código a su sitio
+  return text.replace(/\uE000(\d+)\uE000/g, (match, index) => codeParts[index]);
+}
 
-  return text;
+// Quita la sangría común de un bloque de código. El modelo sangra los bloques que van
+// dentro de una lista, y al recortar solo la primera línea quedaba desalineada
+function dedent(code) {
+  const lines = code.replace(/^\n+|\s+$/g, '').split('\n');
+  const indents = lines.filter(line => line.trim()).map(line => line.match(/^ */)[0].length);
+  const common = indents.length > 0 ? Math.min(...indents) : 0;
+  return lines.map(line => line.slice(common)).join('\n');
 }
 
 function escapeHtml(text) {
@@ -521,7 +544,7 @@ function renderConversations() {
       convDiv.classList.add('active');
     }
 
-    const date = new Date(conv.updated_at);
+    const date = parseDbDate(conv.updated_at);
     const dateStr = formatDate(conv.updated_at);
 
     // Fecha completa para el tooltip
@@ -604,8 +627,17 @@ async function deleteConversation(id) {
   }
 }
 
+// SQLite guarda CURRENT_TIMESTAMP en UTC y sin zona ("2026-09-18 11:22:37"); new Date()
+// lo interpretaría como hora local y las fechas saldrían desfasadas (p. ej. "Hace 2h" al crearla)
+function parseDbDate(dateString) {
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
+    return new Date(`${dateString.replace(' ', 'T')}Z`);
+  }
+  return new Date(dateString);
+}
+
 function formatDate(dateString) {
-  const date = new Date(dateString);
+  const date = parseDbDate(dateString);
   const now = new Date();
 
   if (isNaN(date.getTime())) {
@@ -683,8 +715,168 @@ function updateCacheStatus() {
 // Funciones de configuración
 async function openSettings() {
   settingsModal.classList.add('active');
+  loadDocsPacks(); // Sin esperar: puede tardar si no hay conexión
   await checkOllamaStatus();
   await loadAvailableModels();
+}
+
+// === Documentación offline (paquetes DevDocs) ===
+
+let docsPacks = [];
+let docsPacksOnline = true;
+let embedAvailable = false; // ¿Está instalado en Ollama el modelo de embeddings (búsqueda semántica)?
+const docsPackProgress = {}; // key → { phase, percent } de la instalación en curso
+const docsPackErrors = {}; // key → último error de instalación
+
+window.electronAPI.onDocsPackProgress(progress => {
+  docsPackProgress[progress.key] = progress;
+  renderDocsPacks();
+});
+
+async function loadDocsPacks() {
+  try {
+    const result = await window.electronAPI.listDocsPacks();
+    if (result.success) {
+      docsPacks = result.packs;
+      docsPacksOnline = result.online;
+      embedAvailable = result.embedAvailable;
+    }
+  } catch (error) {
+    console.error('Error loading docs packs:', error);
+  }
+  renderDocsPacks();
+}
+
+function formatSize(bytes) {
+  return bytes >= 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1e3))} KB`;
+}
+
+function describeDocsPack(pack) {
+  const progress = docsPackProgress[pack.key];
+  if (progress) {
+    const phases = { download: 'Descargando', index: 'Indexando', embed: 'Preparando búsqueda semántica' };
+    return { text: `${phases[progress.phase] || 'Procesando'}… ${progress.percent}%` };
+  }
+  if (docsPackErrors[pack.key]) {
+    return { text: `Error: ${docsPackErrors[pack.key]}`, className: 'error' };
+  }
+  if (pack.installed) {
+    const version = pack.installed.release ? `v${pack.installed.release}` : 'última versión';
+    const semantic = pack.installed.semantic ? ' · búsqueda semántica' : '';
+    const update = pack.updateAvailable ? ' · actualización disponible' : '';
+    return {
+      text: `Instalado · ${version} · ${pack.installed.pages} páginas${semantic}${update}`,
+      className: 'installed',
+    };
+  }
+  if (!pack.available) {
+    return { text: 'No disponible' };
+  }
+  return { text: [formatSize(pack.size), pack.release && `v${pack.release}`].filter(Boolean).join(' · ') };
+}
+
+function renderDocsPacks() {
+  const list = document.getElementById('docsPacksList');
+  if (!list) {
+    return;
+  }
+
+  const busy = docsPacks.some(pack => pack.installing) || Object.keys(docsPackProgress).length > 0;
+  const visible = docsPacksOnline ? docsPacks : docsPacks.filter(pack => pack.installed);
+
+  list.innerHTML = '';
+
+  if (!docsPacksOnline) {
+    list.innerHTML =
+      '<div class="docs-packs-empty">Sin conexión con DevDocs: solo se muestran los paquetes instalados.</div>';
+  }
+  if (visible.length === 0) {
+    list.innerHTML += '<div class="docs-packs-empty">No hay paquetes para mostrar.</div>';
+    return;
+  }
+
+  visible.forEach(pack => {
+    const status = describeDocsPack(pack);
+    const progress = docsPackProgress[pack.key];
+
+    const row = document.createElement('div');
+    row.className = 'docs-pack';
+    row.innerHTML = `
+      <div class="docs-pack-info">
+        <div class="docs-pack-name">${escapeHtml(pack.name)}</div>
+        <div class="docs-pack-meta ${status.className || ''}">${escapeHtml(status.text)}</div>
+        ${progress ? `<div class="docs-pack-progress"><div class="docs-pack-progress-bar" style="width: ${progress.percent}%"></div></div>` : ''}
+      </div>
+      <div class="docs-pack-actions"></div>
+    `;
+
+    const actions = row.querySelector('.docs-pack-actions');
+    const addButton = (label, onClick, className = '') => {
+      const button = document.createElement('button');
+      button.className = `docs-pack-btn ${className}`;
+      button.textContent = label;
+      button.disabled = busy;
+      button.addEventListener('click', onClick);
+      actions.appendChild(button);
+    };
+
+    if (!progress) {
+      if (pack.installed) {
+        if (pack.updateAvailable) {
+          addButton('Actualizar', () => installDocsPack(pack.key));
+        }
+        // Paquetes instalados antes de tener el modelo de embeddings
+        if (!pack.installed.semantic && embedAvailable) {
+          addButton('Activar semántica', () => embedDocsPack(pack.key));
+        }
+        addButton('Eliminar', () => removeDocsPack(pack), 'danger');
+      } else if (pack.available) {
+        addButton('Descargar', () => installDocsPack(pack.key));
+      }
+    }
+
+    list.appendChild(row);
+  });
+}
+
+async function installDocsPack(key) {
+  delete docsPackErrors[key];
+  docsPackProgress[key] = { key, phase: 'download', percent: 0 };
+  renderDocsPacks();
+
+  const result = await window.electronAPI.installDocsPack(key);
+
+  delete docsPackProgress[key];
+  if (!result.success) {
+    docsPackErrors[key] = result.error;
+  }
+  await loadDocsPacks();
+}
+
+async function embedDocsPack(key) {
+  delete docsPackErrors[key];
+  docsPackProgress[key] = { key, phase: 'embed', percent: 0 };
+  renderDocsPacks();
+
+  const result = await window.electronAPI.embedDocsPack(key);
+
+  delete docsPackProgress[key];
+  if (!result.success) {
+    docsPackErrors[key] = result.error;
+  }
+  await loadDocsPacks();
+}
+
+async function removeDocsPack(pack) {
+  if (!confirm(`¿Eliminar la documentación offline de ${pack.name}?`)) {
+    return;
+  }
+
+  const result = await window.electronAPI.removeDocsPack(pack.key);
+  if (!result.success) {
+    docsPackErrors[pack.key] = result.error;
+  }
+  await loadDocsPacks();
 }
 
 function closeSettings() {
@@ -763,8 +955,31 @@ async function changeModel(modelName) {
   }
 }
 
+// Rellenar el selector de documentación con las fuentes disponibles
+async function loadDocsSources() {
+  if (!techSelect) {
+    return;
+  }
+
+  try {
+    const result = await window.electronAPI.getDocsSources();
+
+    if (result.success) {
+      result.sources.forEach(source => {
+        const option = document.createElement('option');
+        option.value = source.key;
+        option.textContent = source.name;
+        techSelect.appendChild(option);
+      });
+    }
+  } catch (error) {
+    console.error('Error loading docs sources:', error);
+  }
+}
+
 // Inicializar
 window.addEventListener('DOMContentLoaded', async () => {
+  await loadDocsSources();
   await loadConversations();
   await checkOllamaStatus();
   messageInput.focus();

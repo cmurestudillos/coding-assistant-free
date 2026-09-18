@@ -1,12 +1,14 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const Database = require('./src/database');
 const DocsScraper = require('./src/scraper');
+const DocsIndex = require('./src/docs-index');
 const AIEngine = require('./src/ai-engine');
 
 let mainWindow;
 let database;
 let scraper;
+let docsIndex;
 let aiEngine;
 let currentConversationId = null;
 
@@ -25,16 +27,28 @@ function createWindow() {
     backgroundColor: '#1e1e1e',
   });
 
+  // Abrir los enlaces (fuentes de documentación) en el navegador del sistema
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//.test(url)) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
+  });
+
   mainWindow.loadFile('index.html');
 }
 
 app.whenReady().then(() => {
   database = new Database();
-  scraper = new DocsScraper(database);
   aiEngine = new AIEngine();
+  docsIndex = new DocsIndex(database.db, database.ready, aiEngine);
+  scraper = new DocsScraper(database, docsIndex);
 
   database.cleanOldCache();
   createWindow();
+
+  // Cargar el modelo en segundo plano para que la primera pregunta no espere a la carga en frío
+  aiEngine.warmUp();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -59,6 +73,65 @@ ipcMain.handle('check-ollama', async () => {
   try {
     const status = await aiEngine.checkOllama();
     return { success: true, ...status };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Fuentes de documentación disponibles (para el selector de la interfaz)
+ipcMain.handle('get-docs-sources', async () => {
+  return { success: true, sources: scraper.getSources() };
+});
+
+// === Documentación offline (paquetes DevDocs) ===
+
+ipcMain.handle('docs-packs-list', async () => {
+  try {
+    return { success: true, ...(await docsIndex.listPacks()) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// El progreso se envía con el evento 'docs-pack-progress' mientras dura la instalación
+ipcMain.handle('docs-pack-install', async (event, key) => {
+  let lastProgress = '';
+  const sendProgress = progress => {
+    const current = `${progress.phase}:${progress.percent}`;
+    if (current !== lastProgress && !event.sender.isDestroyed()) {
+      lastProgress = current;
+      event.sender.send('docs-pack-progress', { key, ...progress });
+    }
+  };
+
+  try {
+    const result = await docsIndex.install(key, sendProgress);
+    return { success: true, ...result };
+  } catch (error) {
+    console.error(`Error instalando documentación ${key}:`, error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+// Generar los embeddings (búsqueda semántica) de un paquete ya instalado
+ipcMain.handle('docs-pack-embed', async (event, key) => {
+  try {
+    await docsIndex.embedPack(key, progress => {
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('docs-pack-progress', { key, ...progress });
+      }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error(`Error generando embeddings de ${key}:`, error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('docs-pack-remove', async (event, key) => {
+  try {
+    await docsIndex.remove(key);
+    return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -119,7 +192,8 @@ ipcMain.handle('delete-conversation', async (event, conversationId) => {
 });
 
 // Enviar mensaje (MEJORADO con IA)
-ipcMain.handle('send-message', async (event, message) => {
+// options.technology: fuente de documentación elegida en la interfaz ('' = automática, 'none' = sin docs)
+ipcMain.handle('send-message', async (event, message, options = {}) => {
   try {
     if (!currentConversationId) {
       const firstWords = message.split(' ').slice(0, 5).join(' ');
@@ -129,15 +203,26 @@ ipcMain.handle('send-message', async (event, message) => {
     // Guardar mensaje del usuario
     await database.saveMessage(currentConversationId, 'user', message);
 
-    // Obtener contexto de la conversación
+    // Historial previo de la conversación (sin el mensaje recién guardado, que se envía aparte)
     const messages = await database.getMessages(currentConversationId);
-    const context = messages.slice(-10).map(m => ({
+    const history = messages.slice(-11, -1).map(m => ({
       role: m.role,
       content: m.content,
     }));
 
     let answer = '';
     let sources = [];
+    let docsContext = '';
+
+    // Buscar en la documentación oficial con términos en inglés. También con código:
+    // la IA extrae las APIs que usa (p. ej. "useEffect", "fs.readFile")
+    if (options.technology !== 'none') {
+      console.log('📚 Buscando en documentación...');
+      const searchQuery = await aiEngine.extractSearchQuery(message);
+      const docsResults = await scraper.searchDocs(message, { searchQuery, technology: options.technology });
+      docsContext = scraper.formatDocsForAI(docsResults);
+      sources = scraper.toSources(docsResults);
+    }
 
     // Detectar si contiene código
     const codeInfo = scraper.extractCode(message);
@@ -146,7 +231,7 @@ ipcMain.handle('send-message', async (event, message) => {
       console.log('Detectado codigo, analizando...');
 
       // Si hay código, analizar con IA
-      const result = await aiEngine.analyzeCode(codeInfo.code, codeInfo.language, message);
+      const result = await aiEngine.analyzeCode(codeInfo.code, codeInfo.language, message, docsContext);
 
       if (result.success) {
         answer = result.response;
@@ -154,34 +239,13 @@ ipcMain.handle('send-message', async (event, message) => {
         answer = `Error al analizar el codigo: ${result.error}`;
       }
     } else {
-      // Buscar en documentación primero (rápido)
-      // console.log('📚 Buscando en documentación...');
-      // const docsResults = await scraper.searchDocs(message, 2);
-      // const docsContext = scraper.formatDocsForAI(docsResults);
-
-      // sources = docsResults.map(r => ({
-      //   title: r.title,
-      //   url: r.url,
-      //   source: r.source,
-      // }));
-
       // Generar respuesta con IA + contexto de docs
       console.log('Generando respuesta con IA...');
-      // const promptWithDocs = message + docsContext;
-      const promptWithDocs = message;
-
-      const result = await aiEngine.generate(promptWithDocs, context);
+      const result = await aiEngine.generate(message, history, docsContext);
 
       if (result.success) {
+        // Las fuentes se muestran numeradas en la interfaz, a partir de "sources"
         answer = result.response;
-
-        // Añadir referencias a docs al final si hay
-        if (sources.length > 0) {
-          answer += '\n\n---\n\n**Referencias utiles:**\n';
-          sources.forEach(s => {
-            answer += `- [${s.title}](${s.url}) - ${s.source}\n`;
-          });
-        }
       } else {
         answer = `Error: ${result.error}\n\n¿Está Ollama corriendo? Ejecuta: \`ollama serve\``;
       }
