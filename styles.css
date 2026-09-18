@@ -410,6 +410,30 @@ body {
   font-size: 11px;
 }
 
+.source-index {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Selector de documentación (junto a las acciones rápidas) */
+.tech-select {
+  width: auto; /* la regla global de select usa width: 100% */
+  margin-left: auto;
+  padding: 8px 12px;
+  background: white;
+  border: 2px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tech-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
 /* Input */
 .input-container {
   background: white;
@@ -661,6 +685,104 @@ select:focus {
   margin-top: 8px;
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+/* Documentación offline */
+.docs-packs-list {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.docs-pack {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.docs-pack:last-child {
+  border-bottom: none;
+}
+
+.docs-pack-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.docs-pack-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.docs-pack-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.docs-pack-meta.installed {
+  color: var(--success);
+}
+
+.docs-pack-meta.error {
+  color: var(--error);
+}
+
+.docs-pack-progress {
+  height: 4px;
+  margin-top: 6px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.docs-pack-progress-bar {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.2s;
+}
+
+.docs-pack-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.docs-pack-btn {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.docs-pack-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+}
+
+.docs-pack-btn.danger {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.docs-pack-btn.danger:hover:not(:disabled) {
+  background: var(--error);
+  color: white;
+}
+
+.docs-pack-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.docs-packs-empty {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 .installation-guide {

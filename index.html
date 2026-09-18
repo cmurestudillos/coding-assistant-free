@@ -132,6 +132,10 @@
             <button class="quick-btn" data-action="explain">Explicar</button>
             <button class="quick-btn" data-action="fix">Corregir errores</button>
             <button class="quick-btn" data-action="test">Generar tests</button>
+            <select id="techSelect" class="tech-select" title="Documentación a consultar">
+              <option value="">📚 Documentación: automática</option>
+              <option value="none">Sin documentación</option>
+            </select>
           </div>
 
           <div class="input-wrapper">
@@ -167,6 +171,19 @@
                   <option value="">Cargando modelos...</option>
                 </select>
                 <small class="help-text"> Si el modelo no está descargado, se descargará automáticamente. </small>
+              </div>
+
+              <div class="form-group">
+                <label>Documentación offline</label>
+                <small class="help-text">
+                  Descarga la documentación oficial (paquetes de DevDocs) para buscar sin conexión y con mejores
+                  resultados. Si una tecnología no está descargada, se consulta su web. Con el modelo
+                  <code>nomic-embed-text</code> instalado en Ollama, también se prepara la búsqueda semántica (encuentra
+                  lo que buscas aunque no uses el nombre exacto de la API).
+                </small>
+                <div id="docsPacksList" class="docs-packs-list">
+                  <div class="docs-packs-empty">Cargando…</div>
+                </div>
               </div>
 
               <div class="installation-guide" id="installationGuide" style="display: none">

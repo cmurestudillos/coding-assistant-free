@@ -15,7 +15,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   clearCurrentConversation: () => ipcRenderer.invoke('clear-current-conversation'),
 
   // Mensajes
-  sendMessage: message => ipcRenderer.invoke('send-message', message),
+  sendMessage: (message, options) => ipcRenderer.invoke('send-message', message, options),
+
+  // Documentación
+  getDocsSources: () => ipcRenderer.invoke('get-docs-sources'),
+  listDocsPacks: () => ipcRenderer.invoke('docs-packs-list'),
+  installDocsPack: key => ipcRenderer.invoke('docs-pack-install', key),
+  removeDocsPack: key => ipcRenderer.invoke('docs-pack-remove', key),
+  embedDocsPack: key => ipcRenderer.invoke('docs-pack-embed', key),
+  onDocsPackProgress: callback => ipcRenderer.on('docs-pack-progress', (_event, progress) => callback(progress)),
 
   optimizeCode: data => ipcRenderer.invoke('optimize-code', data),
   generateTests: data => ipcRenderer.invoke('generate-tests', data),

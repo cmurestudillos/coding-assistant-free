@@ -6,49 +6,54 @@ class Database {
   constructor() {
     const dbPath = path.join(app.getPath('userData'), 'assistant.db');
     this.db = new sqlite3.Database(dbPath);
-    this.initialize();
+    // Se resuelve cuando el esquema está creado (el índice de documentación, que comparte
+    // esta conexión, lo espera antes de crear sus tablas)
+    this.ready = this.initialize();
   }
 
   initialize() {
-    this.db.serialize(() => {
-      // Tabla de conversaciones
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS conversations (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
+    return new Promise(resolve => {
+      this.db.serialize(() => {
+        // Tabla de conversaciones
+        this.db.run(`
+          CREATE TABLE IF NOT EXISTS conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
 
-      // Tabla de mensajes
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS messages (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          conversation_id INTEGER,
-          role TEXT,
-          content TEXT,
-          sources TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (conversation_id) REFERENCES conversations (id)
-        )
-      `);
+        // Tabla de mensajes
+        this.db.run(`
+          CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER,
+            role TEXT,
+            content TEXT,
+            sources TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES conversations (id)
+          )
+        `);
 
-      // Tabla de caché de documentación
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS docs_cache (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          query TEXT UNIQUE,
-          results TEXT,
-          source TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
+        // Caché de documentación por URL (sustituye a la antigua caché por pregunta, docs_cache)
+        this.db.run(`DROP TABLE IF EXISTS docs_cache`);
+        this.db.run(`
+          CREATE TABLE IF NOT EXISTS docs_pages (
+            url TEXT PRIMARY KEY,
+            content TEXT,
+            fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
 
-      // Índices para búsquedas rápidas
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_query ON docs_cache(query)`);
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_conversation ON messages(conversation_id)`);
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_title ON conversations(title)`);
+        // Índices para búsquedas rápidas
+        this.db.run(`CREATE INDEX IF NOT EXISTS idx_conversation ON messages(conversation_id)`);
+        this.db.run(`CREATE INDEX IF NOT EXISTS idx_title ON conversations(title)`);
+
+        // En modo serialize, esta consulta se ejecuta después de todas las anteriores
+        this.db.get('SELECT 1', () => resolve());
+      });
     });
   }
 
@@ -168,44 +173,38 @@ class Database {
     });
   }
 
-  // Caché de documentación
-  getCachedDocs(query) {
+  // Caché de documentación: contenido descargado por URL, válido 7 días
+  getCachedPage(url) {
     return new Promise((resolve, reject) => {
       this.db.get(
-        'SELECT * FROM docs_cache WHERE query = ? AND datetime(created_at, "+7 days") > datetime("now")',
-        [query.toLowerCase()],
+        "SELECT content FROM docs_pages WHERE url = ? AND datetime(fetched_at, '+7 days') > datetime('now')",
+        [url],
         (err, row) => {
           if (err) {
             reject(err);
-          } else if (row) {
-            resolve(JSON.parse(row.results));
           } else {
-            resolve(null);
+            resolve(row ? row.content : null);
           }
         }
       );
     });
   }
 
-  saveCachedDocs(query, results, source) {
+  saveCachedPage(url, content) {
     return new Promise((resolve, reject) => {
-      this.db.run(
-        'INSERT OR REPLACE INTO docs_cache (query, results, source) VALUES (?, ?, ?)',
-        [query.toLowerCase(), JSON.stringify(results), source],
-        err => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
+      this.db.run('INSERT OR REPLACE INTO docs_pages (url, content) VALUES (?, ?)', [url, content], err => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
         }
-      );
+      });
     });
   }
 
   cleanOldCache() {
     return new Promise((resolve, reject) => {
-      this.db.run('DELETE FROM docs_cache WHERE datetime(created_at, "+30 days") < datetime("now")', err => {
+      this.db.run("DELETE FROM docs_pages WHERE datetime(fetched_at, '+7 days') < datetime('now')", err => {
         if (err) {
           reject(err);
         } else {
